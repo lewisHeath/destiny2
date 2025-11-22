@@ -7,6 +7,12 @@ import Config
 # any compile-time configuration in here, as it won't be applied.
 # The block below contains prod specific runtime configuration.
 
+# Bungie API configuration
+config :destiny2,
+  bungie_api_key: System.get_env("BUNGIE_API_KEY"),
+  bungie_client_id: System.get_env("BUNGIE_CLIENT_ID"),
+  bungie_client_secret: System.get_env("BUNGIE_CLIENT_SECRET")
+
 # ## Using releases
 #
 # If you use `mix release`, you need to explicitly enable the server

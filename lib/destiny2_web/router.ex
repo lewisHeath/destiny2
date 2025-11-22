@@ -14,10 +14,22 @@ defmodule Destiny2Web.Router do
     plug :accepts, ["json"]
   end
 
+  pipeline :require_auth do
+    plug Destiny2Web.Plugs.RequireAuth
+  end
+
   scope "/", Destiny2Web do
     pipe_through :browser
 
     get "/", PageController, :home
+    get "/oauth/callback", AuthController, :callback
+    get "/logout", AuthController, :logout
+  end
+
+  scope "/", Destiny2Web do
+    pipe_through :browser
+
+    live "/profile", ProfileLive, :index
   end
 
   # Other scopes may use custom stacks.

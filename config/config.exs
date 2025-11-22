@@ -11,6 +11,11 @@ config :destiny2,
   ecto_repos: [Destiny2.Repo],
   generators: [timestamp_type: :utc_datetime]
 
+config :destiny2, :bungie,
+  client_id: System.get_env("BUNGIE_CLIENT_ID"),
+  client_secret: System.get_env("BUNGIE_CLIENT_SECRET"),
+  redirect_uri: System.get_env("BUNGIE_REDIRECT_URI") || "http://localhost:4000/oauth/callback"
+
 # Configures the endpoint
 config :destiny2, Destiny2Web.Endpoint,
   url: [host: "localhost"],
