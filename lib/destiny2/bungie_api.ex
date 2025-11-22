@@ -22,7 +22,15 @@ defmodule Destiny2.BungieAPI do
     end
   end
 
-  defp handle_response({:ok, %{status: 200, body: body}}) do
+  defp handle_response({:ok, %{status: 200, body: body}}) when is_map(body) do
+    case body do
+      %{"Response" => response, "ErrorCode" => 1} -> {:ok, response}
+      %{"ErrorCode" => code, "ErrorStatus" => status} -> {:error, "#{status} (#{code})"}
+      data -> {:ok, data}
+    end
+  end
+
+  defp handle_response({:ok, %{status: 200, body: body}}) when is_binary(body) do
     case Jason.decode(body) do
       {:ok, %{"Response" => response, "ErrorCode" => 1}} -> {:ok, response}
       {:ok, %{"ErrorCode" => code, "ErrorStatus" => status}} -> {:error, "#{status} (#{code})"}
@@ -45,7 +53,13 @@ defmodule Destiny2.BungieAPI do
     |> handle_response()
   end
 
-  def get_character(membership_type, membership_id, character_id, access_token, components \\ [200]) do
+  def get_character(
+        membership_type,
+        membership_id,
+        character_id,
+        access_token,
+        components \\ [200]
+      ) do
     components_str = Enum.join(components, ",")
 
     "#{@base_url}/Destiny2/#{membership_type}/Profile/#{membership_id}/Character/#{character_id}/?components=#{components_str}"
@@ -76,12 +90,13 @@ defmodule Destiny2.BungieAPI do
   def get_access_token(code) do
     config = Application.get_env(:destiny2, :bungie)
 
-    body = URI.encode_query(%{
-      grant_type: "authorization_code",
-      code: code,
-      client_id: config[:client_id],
-      client_secret: config[:client_secret]
-    })
+    body =
+      URI.encode_query(%{
+        grant_type: "authorization_code",
+        code: code,
+        client_id: config[:client_id],
+        client_secret: config[:client_secret]
+      })
 
     "https://www.bungie.net/Platform/App/OAuth/token/"
     |> Req.post(
@@ -94,12 +109,13 @@ defmodule Destiny2.BungieAPI do
   def refresh_access_token(refresh_token) do
     config = Application.get_env(:destiny2, :bungie)
 
-    body = URI.encode_query(%{
-      grant_type: "refresh_token",
-      refresh_token: refresh_token,
-      client_id: config[:client_id],
-      client_secret: config[:client_secret]
-    })
+    body =
+      URI.encode_query(%{
+        grant_type: "refresh_token",
+        refresh_token: refresh_token,
+        client_id: config[:client_id],
+        client_secret: config[:client_secret]
+      })
 
     "https://www.bungie.net/Platform/App/OAuth/token/"
     |> Req.post(

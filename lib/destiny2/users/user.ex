@@ -10,6 +10,7 @@ defmodule Destiny2.Users.User do
     field :refresh_token, :string
     field :token_expires_at, :utc_datetime
     field :refresh_expires_at, :utc_datetime
+    field :profile_picture_path, :string
 
     has_many :characters, Destiny2.Characters.Character
     has_many :items, Destiny2.Items.Item
@@ -26,7 +27,8 @@ defmodule Destiny2.Users.User do
       :access_token,
       :refresh_token,
       :token_expires_at,
-      :refresh_expires_at
+      :refresh_expires_at,
+      :profile_picture_path
     ])
     |> validate_required([:membership_id, :membership_type])
     |> unique_constraint([:membership_id, :membership_type])

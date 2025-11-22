@@ -6,21 +6,21 @@ defmodule Destiny2Web.AuthController do
 
   def callback(conn, %{"code" => code}) do
     with {:ok, token_data} <- BungieAPI.get_access_token(code),
-         {:ok, user_data} <- BungieAPI.get_memberships_for_current_user(token_data["access_token"]) do
-      
+         {:ok, user_data} <-
+           BungieAPI.get_memberships_for_current_user(token_data["access_token"]) do
       # Find the primary destiny membership
       # Bungie returns a list of memberships. We prefer the one that matches the cross save setup or the first one.
       # The structure of user_data from GetMembershipsForCurrentUser is:
       # %{
       #   "destinyMemberships" => [...],
-      #   "primaryMembershipId" => "...", 
+      #   "primaryMembershipId" => "...",
       #   "bungieNetUser" => %{...}
       # }
-      
+
       primary_membership_id = user_data["primaryMembershipId"]
       memberships = user_data["destinyMemberships"]
-      
-      membership = 
+
+      membership =
         if primary_membership_id do
           Enum.find(memberships, fn m -> m["membershipId"] == primary_membership_id end)
         else
@@ -35,7 +35,9 @@ defmodule Destiny2Web.AuthController do
           access_token: token_data["access_token"],
           refresh_token: token_data["refresh_token"],
           token_expires_at: DateTime.add(DateTime.utc_now(), token_data["expires_in"], :second),
-          refresh_expires_at: DateTime.add(DateTime.utc_now(), token_data["refresh_expires_in"], :second)
+          refresh_expires_at:
+            DateTime.add(DateTime.utc_now(), token_data["refresh_expires_in"], :second),
+          profile_picture_path: user_data["bungieNetUser"]["profilePicturePath"]
         }
 
         case Users.create_or_update_user(user_attrs) do
@@ -44,7 +46,7 @@ defmodule Destiny2Web.AuthController do
             |> put_session(:user_id, user.id)
             |> put_flash(:info, "Successfully logged in!")
             |> redirect(to: ~p"/profile")
-            
+
           {:error, _changeset} ->
             conn
             |> put_flash(:error, "Failed to create user record")

@@ -1,0 +1,198 @@
+<div class="min-h-screen bg-base-300 text-base-content font-sans">
+  <!-- Navbar -->
+  <div class="navbar bg-base-100 border-b border-base-200 sticky top-0 z-50 min-h-16">
+    <div class="flex-1">
+      <a class="btn btn-ghost text-xl font-bold tracking-tight" href="/">DESTINY 2 MANAGER</a>
+    </div>
+    <div class="flex-none gap-2">
+      <button
+        phx-click="refresh"
+        class={"btn btn-ghost btn-circle " <> if @loading, do: "pointer-events-none", else: ""}
+      >
+        <%= if @loading do %>
+          <span class="loading loading-spinner loading-sm"></span>
+        <% else %>
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            class="h-5 w-5"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+          </svg>
+        <% end %>
+      </button>
+
+      <div class="dropdown dropdown-end">
+        <div tabindex="0" role="button" class="btn btn-ghost btn-circle avatar">
+          <div class="w-10 rounded-full">
+            <%= if @current_user.profile_picture_path do %>
+              <img
+                alt="User"
+                src={"https://www.bungie.net#{@current_user.profile_picture_path}"}
+              />
+            <% else %>
+              <img
+                alt="User"
+                src="https://www.bungie.net/img/theme/bungienet/icons/default_avatar.jpg"
+              />
+            <% end %>
+          </div>
+        </div>
+        <ul
+          tabindex="0"
+          class="mt-3 z-[1] p-2 shadow menu menu-sm dropdown-content bg-base-100 rounded-box w-52"
+        >
+          <li>
+            <a href="/logout">Logout</a>
+          </li>
+        </ul>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Main Content -->
+  <main class="pb-4 px-4 overflow-x-auto">
+    <div class="min-w-[1200px] mx-auto">
+      
+      <!-- Split Layout: Characters (50%) | Vault (50%) -->
+      <div class="grid grid-cols-2 gap-6">
+        
+        <!-- Left Column: Characters -->
+        <div class="flex flex-col gap-6">
+          <!-- Character Headers -->
+          <div class="grid grid-cols-3 gap-2 sticky top-16 z-40 bg-base-300 py-2">
+            <%= for character <- @characters do %>
+              <div class="card bg-base-100 border border-base-200 image-full h-16 overflow-hidden rounded-lg">
+                <figure>
+                  <%= if character.emblem_background_path do %>
+                    <img
+                      src={"https://www.bungie.net#{character.emblem_background_path}"}
+                      class="w-full object-cover"
+                    />
+                  <% end %>
+                </figure>
+                <div class="card-body p-2 flex-row items-center justify-between gap-1">
+                  <div class="min-w-0">
+                    <h2 class="card-title text-white uppercase tracking-wider text-xs truncate">
+                      {class_name(character.class_type)}
+                    </h2>
+                    <p class="text-[10px] text-warning font-mono">✧ {character.light_level}</p>
+                  </div>
+                  <div class="avatar">
+                    <div class="w-8 rounded border border-white/20">
+                      <img src={"https://www.bungie.net#{character.emblem_background_path}"} />
+                    </div>
+                  </div>
+                </div>
+              </div>
+            <% end %>
+          </div>
+
+          <!-- Equipped Items Section -->
+          <div class="space-y-2">
+            <h3 class="text-lg font-bold px-1 opacity-80">Equipped</h3>
+            <div class="card bg-base-100 border border-base-200 overflow-hidden rounded-lg">
+              <div class="grid grid-cols-3 divide-x divide-base-200">
+                <%= for character <- @characters do %>
+                  <div class="p-3 space-y-3">
+                    <!-- Weapons -->
+                    <div class="space-y-1">
+                      <div class="text-xs font-semibold opacity-60 uppercase tracking-wide">Weapons</div>
+                      <div class="flex gap-1.5 flex-wrap">
+                        <%= for bucket <- equipped_weapon_buckets() do %>
+                          <%= for item <- get_equipped_items(@items, character.id, bucket, @definitions) do %>
+                            <.item_icon item={item} definitions={@definitions} class="w-12 h-12" />
+                          <% end %>
+                        <% end %>
+                      </div>
+                    </div>
+                    <!-- Armor -->
+                    <div class="space-y-1">
+                      <div class="text-xs font-semibold opacity-60 uppercase tracking-wide">Armor</div>
+                      <div class="flex gap-1.5 flex-wrap">
+                        <%= for bucket <- equipped_armor_buckets() do %>
+                          <%= for item <- get_equipped_items(@items, character.id, bucket, @definitions) do %>
+                            <.item_icon item={item} definitions={@definitions} class="w-12 h-12" />
+                          <% end %>
+                        <% end %>
+                      </div>
+                    </div>
+                  </div>
+                <% end %>
+              </div>
+            </div>
+          </div>
+
+          <!-- Character Inventory -->
+          <div class="space-y-6">
+            <%= for {category, label} <- [
+              {:weapons, "Weapons"},
+              {:armor, "Armor"},
+              {:general, "General"}
+            ] do %>
+              <div class="space-y-2">
+                <h3 class="text-lg font-bold px-1 opacity-80">{label}</h3>
+
+                <div class="card bg-base-100 border border-base-200 overflow-hidden rounded-lg">
+                  <%= for bucket <- buckets_for_category(category) do %>
+                    <div class="border-b border-base-200 last:border-0">
+                      <div class="grid grid-cols-3 divide-x divide-base-200">
+                        <%= for character <- @characters do %>
+                          <div class="p-2 min-h-[80px] flex flex-wrap gap-2 content-start justify-center">
+                            <%= for item <- get_unequipped_items(@items, character.id, bucket, @definitions) do %>
+                              <.item_icon item={item} definitions={@definitions} class="w-14 h-14" />
+                            <% end %>
+                          </div>
+                        <% end %>
+                      </div>
+                    </div>
+                  <% end %>
+                </div>
+              </div>
+            <% end %>
+          </div>
+        </div>
+
+        <!-- Right Column: Vault -->
+        <div class="flex flex-col gap-6">
+          <!-- Vault Header -->
+          <div class="sticky top-16 z-40 bg-base-300 py-2">
+            <div class="card bg-base-200 border border-base-300 h-16 flex items-center justify-center rounded-lg">
+              <div class="card-body p-4 items-center justify-center">
+                 <h2 class="card-title text-base-content/50 tracking-widest text-sm">VAULT</h2>
+              </div>
+            </div>
+          </div>
+
+          <!-- Vault Inventory -->
+          <div class="space-y-6">
+            <%= for {category, label} <- [
+              {:weapons, "Weapons"},
+              {:armor, "Armor"},
+              {:general, "General"}
+            ] do %>
+              <div class="space-y-2">
+                <h3 class="text-lg font-bold px-1 opacity-80">{label}</h3>
+
+                <div class="card bg-base-100 border border-base-200 overflow-hidden rounded-lg">
+                  <%= for bucket <- buckets_for_category(category) do %>
+                    <div class="border-b border-base-200 last:border-0 bg-base-200/30">
+                      <div class="p-3 min-h-[80px] flex flex-wrap gap-1.5 content-start">
+                        <%= for item <- get_items(@vault_items, nil, bucket, @definitions) do %>
+                          <.item_icon item={item} definitions={@definitions} class="w-11 h-11" />
+                        <% end %>
+                      </div>
+                    </div>
+                  <% end %>
+                </div>
+              </div>
+            <% end %>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </main>
+</div>

@@ -4,7 +4,7 @@ defmodule Destiny2Web.Live.EnsureAuth do
 
   alias Destiny2.Users
 
-  def on_mount(:ensure_authenticated, _params, session, socket) do
+  def on_mount(_key, _params, session, socket) do
     case Map.get(session, "user_id") do
       nil ->
         {:halt,
